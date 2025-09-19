@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>FraudShield 360 — Dashboard</title>
+  <link rel="stylesheet" href="/static/app.css"/>
+</head>
+<body>
+  <h1>FraudShield 360</h1>
+  <p>Step 1: Minimal dashboard. Click to verify ledger:</p>
+  <button onclick="verify()">Verify Ledger</button>
+  <pre id="out"></pre>
+  <script>
+    async function verify() {
+      const r = await fetch('/verify');
+      const j = await r.json();
+      document.getElementById('out').textContent = JSON.stringify(j, null, 2);
+    }
+  </script>
+</body>
+</html>

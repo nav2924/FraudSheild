@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+
+# Virtual envs
+.venv/
+.env
+.env.*
+*.env
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / temp
+*.log
+*.tmp
+tmp/
+.cache/
+logs/
+venv/
+
+# Data generated locally (keep sample files but ignore runtime artifacts)
+data/ledger.jsonl
+data/tmp/
+data/*.log
+
+# Models generated at runtime
+models/*.pkl
+models/*.joblib
+
+# Node (if you add a React UI later)
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Docker
+**/.dockerignore

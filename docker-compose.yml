@@ -1,0 +1,70 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on: [zookeeper]
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    restart: unless-stopped 
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: uvicorn app.routes.api:app --host 0.0.0.0 --port 8000
+    env_file: config/app.env.example
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on: [kafka, redis]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+
+  worker:
+    build: .
+    command: python -m app.services.kafka_consumer
+    env_file: config/app.env.example
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on: [kafka, api, redis]
+    volumes:
+      - ./data:/app/data
+
+  scorer:
+    build: .
+    command: python -m app.services.scorer_worker
+    env_file: config/app.env.example
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_URL=redis://redis:6379/0
+    depends_on: [kafka, redis]
+    volumes:
+      - ./data:/app/data
+
+  dashboard:
+    build: .
+    command: flask --app app.routes.dashboard run --host 0.0.0.0 --port 8050
+    env_file: config/app.env.example
+    depends_on: [api]
+    ports:
+      - "8050:8050"
+    volumes:
+      - ./data:/app/data
