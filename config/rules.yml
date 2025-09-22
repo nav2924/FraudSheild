@@ -1,20 +1,49 @@
+# ---- HARD STOPS (block/hold immediately) ----
 hard_stops:
   - id: new_device_high_amount
     if: "not features.device_seen_before and features.amount_inr >= 75000"
     action: "HOLD"
 
+  - id: peer_impossible_amount
+    if: "features.peer_z >= 8"
+    action: "HOLD"
+
+# ---- SOFT SIGNALS (weighted risk signals) ----
 soft_signals:
   - id: night_owl
     weight: 0.25
     if: "features.hour in [0,1,2,3,4]"
+
   - id: 10x_user_median
     weight: 0.45
     if: "features.user_median > 0 and features.amount_inr >= 10 * features.user_median"
+
   - id: peer_z_gt_3
     weight: 0.35
     if: "features.peer_z >= 3"
 
+  - id: new_device
+    weight: 0.30
+    if: "not features.device_seen_before"
+
+  - id: new_ip
+    weight: 0.20
+    if: "not features.ip_seen_before"
+
+  - id: rapid_add_payee
+    weight: 0.40
+    if: "features.action == 'transfer' and features.recent_added_payee_within_5m == 1"
+
+  - id: amount_gt_1lakh
+    weight: 0.35
+    if: "features.amount_inr >= 100000"
+
+# ---- THRESHOLDS (how scores map to actions) ----
 thresholds:
   allow_below: 0.35
   stepup_between: [0.35, 0.7]
   block_above: 0.7
+
+# (optional) label to show in UI
+meta:
+  version: "rules_v2"

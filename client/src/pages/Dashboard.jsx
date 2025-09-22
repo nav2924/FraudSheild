@@ -4,6 +4,7 @@ import { usePolling } from "../hooks/usePolling"
 import Layout from "../components/Layout"
 import Toolbar from "../components/Toolbar"
 import DataTable from "../components/DataTable"
+import Flash from "../components/Flash"
 
 export default function Dashboard() {
   const [rows, setRows] = useState([])
@@ -12,41 +13,50 @@ export default function Dashboard() {
   const [query, setQuery] = useState("")
   const [actionFilter, setActionFilter] = useState("ALL")
   const [sortKey, setSortKey] = useState("ts_desc")
+  const [flash, setFlash] = useState("")
+  const [pauseMs, setPauseMs] = useState(0)   // to temporarily pause polling after actions
+  const [savingId, setSavingId] = useState(null) // row-level saving state
 
   const load = async () => {
-    try {
-      const s = await API.getStats()
-      setDecisions(s.decisions ?? 0)
-      const d = await API.getDecisions(200)
-      setRows(d)
-    } catch (e) {
-      // optional: toast or console
-      // console.error(e)
-    }
+    const s = await API.getStats()
+    setDecisions(s.decisions ?? 0)
+    const d = await API.getDecisions(200)
+    setRows(d)
   }
 
-  usePolling(load, 2000)
+  usePolling(load, 2000, pauseMs) // slight change: hook supports a pause delay
 
   const onVerify = async () => {
     setVerifyText("Verifying…")
     try {
       const v = await API.verify()
       setVerifyText(v.ok ? `OK (count ${v.count})` : `TAMPERED (count ${v.count})`)
-    } catch (e) {
+      setFlash("Chain verified")
+    } catch {
       setVerifyText("Verify failed")
+      setFlash("Verify failed")
     }
   }
 
   const onLabel = async (decision_id, event_id, label) => {
     try {
+      setSavingId(decision_id)
+      // optimistic UI: reflect label immediately
+      setRows(prev => prev.map(r => r.decision_id === decision_id ? { ...r, label } : r))
+      // pause polling briefly to avoid a refetch during the click handler window
+      setPauseMs(1200)
       await API.label({ decision_id, event_id, label })
-      alert(`Saved label: ${label}`)
-    } catch (e) {
-      alert("Label failed: " + e.message)
+      setFlash(`Saved: ${label}`)
+    } catch {
+      // roll back label if needed (optional)
+      setFlash("Label failed")
+    } finally {
+      setSavingId(null)
+      // allow polling again
+      setTimeout(() => setPauseMs(0), 300)
     }
   }
 
-  // client-side filter + sort
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const list = rows.filter(r =>
@@ -75,7 +85,8 @@ export default function Dashboard() {
         sortKey={sortKey}
         setSortKey={setSortKey}
       />
-      <DataTable rows={filtered} onLabel={onLabel} />
+      <DataTable rows={filtered} onLabel={onLabel} savingId={savingId} />
+      <Flash message={flash} onDone={() => setFlash("")} />
     </Layout>
   )
 }

@@ -1,14 +1,23 @@
 import { useEffect, useRef } from "react"
 
-/**
- * Simple interval-based polling.
- * returns a stop function (optional: you can ignore it if not needed).
- */
-export function usePolling(fn, ms) {
-  const ref = useRef(null)
+export function usePolling(fn, ms = 2000, pauseMs = 0) {
+  const timer = useRef(null);
   useEffect(() => {
-    fn() // kick once
-    ref.current = setInterval(fn, ms)
-    return () => clearInterval(ref.current)
-  }, [ms]) // fn is stable enough for our case
+    let canceled = false;
+
+    const loop = async () => {
+      try {
+        await fn();
+      } catch {}
+      if (canceled) return;
+      const wait = pauseMs > 0 ? pauseMs : ms;
+      timer.current = setTimeout(loop, wait);
+    };
+
+    loop();
+    return () => {
+      canceled = true;
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [fn, ms, pauseMs]);
 }

@@ -144,3 +144,9 @@ models/*.joblib
 # =========================
 .vercel/
 .netlify/
+
+client/node_modules
+client/dist
+client/.git
+client/.gitignore
+client/.DS_Store

@@ -1,6 +1,6 @@
 # app/routes/dashboard.py
 from flask import Flask, jsonify, request
-import os, json, sqlite3
+import os, json, sqlite3,hashlib
 from datetime import datetime
 
 app = Flask(__name__)
@@ -10,6 +10,50 @@ LEDGER_JSONL = os.environ.get("LEDGER_JSONL", "data/ledger.jsonl")
 LEDGER_SQLITE = os.environ.get("LEDGER_SQLITE", "data/ledger.db")
 # Table name for sqlite chain (adjust if your blockchain_logger uses another):
 SQLITE_TABLE = os.environ.get("LEDGER_TABLE", "chain")
+
+
+
+def _sha256_hex(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()
+
+def _verify_jsonl(path: str):
+    """
+    Verify the hash-chain exactly like blockchain_logger.verify_chain().
+    Returns: {"ok": True, "count": N} or {"ok": False, "at_index": i, "message": "..."}
+    """
+    if not os.path.exists(path):
+        return {"ok": True, "count": 0}
+    prev_hash = "GENESIS"
+    count = 0
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            rec = json.loads(line)
+            # recompute payload_sha256 like the logger
+            payload_sha256 = rec.get("payload_sha256")
+            if not payload_sha256:
+                payload_sha256 = _sha256_hex(json.dumps(rec.get("payload", {}), sort_keys=True))
+            expected = _sha256_hex(
+                prev_hash + payload_sha256 + rec["decision_id"] + rec["block_ts"]
+            )
+            if expected != rec["hash"]:
+                return {"ok": False, "at_index": count, "message": "TAMPERED"}
+            prev_hash = rec["hash"]
+            count += 1
+    return {"ok": True, "count": count}
+
+# ... existing helpers (parse_block_row, read_blocks_jsonl/sqlite, counts, routes) ...
+
+@app.get("/verify")
+def verify():
+    """
+    Verify the local JSONL hash-chain and return result for the React button.
+    (If you later move the ledger to SQLite with full block fields, you can add an sqlite verifier too.)
+    """
+    res = _verify_jsonl(LEDGER_JSONL)
+    return jsonify(res)
 
 def parse_block_row(block):
     """
