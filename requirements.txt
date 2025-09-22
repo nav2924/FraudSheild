@@ -7,3 +7,7 @@ PyYAML==6.0.2
 python-dotenv==1.0.1
 prometheus-client==0.20.0
 redis==5.0.8
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.2
+joblib==1.4.2

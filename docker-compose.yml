@@ -35,7 +35,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      - .:/app
       - ./data:/app/data
+      - ./models:/app/models
 
   worker:
     build: .
