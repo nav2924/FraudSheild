@@ -1,71 +1,48 @@
-# FraudShield 360
+# 🚀 FraudShield 360  
 
-AI-powered UEBA + tamper-proof blockchain logging, streamed with Kafka, containerized with Docker.
+**AI-Powered UEBA + Tamper-Proof Blockchain Logging, streamed with Kafka, containerized with Docker**  
 
-## Prerequisites
-- Docker Desktop (or Docker Engine + Compose plugin)
-- No local Kafka/Redis needed — they run in containers.
+---
 
-## First-time setup
-Clone and go to repo root:
-```bash
-git clone <your-repo-url>.git
-cd FraudSheild
-```
+## 📌 TL;DR (30-sec pitch, non-tech)  
+Today’s fraud tools are **noisy** (false alarms), **rigid** (rules can’t keep up), and **opaque** (no clear reasons).  
 
-## Start (daemon mode)
-```bash
-docker compose up -d --build
-docker compose ps
-```
+**FraudShield 360** learns each customer’s **normal behaviour**, flags unusual actions, **explains why**, and locks every decision on a **blockchain** so it can’t be secretly changed.  
 
-## Health checks
-- API: http://localhost:8000/health
-- Dashboard (ledger verify UI): http://localhost:8050/
+⚡ Runs in real time with **Kafka** and deploys anywhere with **Docker**.  
 
-## Seed demo events
-```bash
-docker compose exec api python scripts/seed_kafka.py
-```
+---
 
-## Follow Logs
-```bash
-# all containers
-docker compose logs -f
+## ❌ Cons of Existing Systems (Layman’s Terms)  
+- 🚫 Too many false alarms → legit customers get blocked.  
+- 🐌 Slow to adapt → fraudsters evolve faster than rules.  
+- 👓 Tunnel vision → only looks at transactions (ignores devices/logins/peers).  
+- ❓ No clear reasons → hard to justify to customers/regulators.  
+- 📝 Logs can be edited → weak trust with auditors.  
+- 📉 Legacy infra → can’t handle real-time spikes.  
 
-# specific services
-docker compose logs -f worker
-docker compose logs -f scorer
-docker compose logs -f kafka
-docker compose logs -f api
-```
+---
 
-## Stop(keep data/containers)
-```bash
-docker compose down
-```
+## ✅ How FraudShield 360 Solves Them  
+- **UEBA baselines** → learns per-user/entity → fewer false alarms.  
+- **Anomaly models** → catch new fraud tricks without rules.  
+- **Signal fusion** → transactions + logins + device + geo + peers.  
+- **Explainability** → human reason codes + SHAP (optional).  
+- **Blockchain ledger** → immutable audit (tamper-proof).  
+- **Kafka streaming** → elastic, real-time ingestion/scoring.  
+- **Docker** → one-click deploy local or cloud.  
 
-## Restart after changes
-```bash
-# Quick rebuild(uses cache):
-docker compose up -d --build
-# Clean rebuild(no cache):
-docker compose build --no-cache
-docker compose up -d
-```
+---
 
-## Hard reset (stop + remove containers, networks, and named volumes if you added any)
-```bash
-docker compose down -v
-```
+## 🏗️ Architecture  
 
-## Useful one-liners
-```bash
-curl http://localhost:8000/health
+### Human Story (non-tech)  
+1. We watch **all signals** (money movement, logins, devices, locations).  
+2. We know your **normal habits**.  
+3. If something looks unusual, the AI raises risk.  
+4. We act smartly: allow / OTP selfie / hold / block.  
+5. We explain **clearly why**.  
+6. We write in **permanent ink** (blockchain).  
+7. We learn from feedback every week.  
 
-curl -X POST http://localhost:8000/score \
-  -H "Content-Type: application/json" \
-  -d '{"event_id":"e_demo","user_id":"U18273","channel":"netbanking","action":"transfer","amount_inr":90000,"device_id_hash":"NEW_DEV","ip":"49.205.x.y","geo":{"lat":9.98,"lon":76.28},"ts":"2025-09-19T02:03:00+05:30"}'
-
-curl http://localhost:8050/verify
-```
+### Technical Blueprint (engineer view)  
