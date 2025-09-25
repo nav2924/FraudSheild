@@ -150,7 +150,6 @@ thresholds:
 ---
 
 ## 📈 Success Metrics
-
 -🔒 Tamper check: Always OK across N decisions.
 -🎯 Alert Precision ↑ (30% fewer false positives).
 -📊 TPR ↑ (same or better detection than rules).
